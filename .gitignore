@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.DS_Store
+node_modules/
+dist/
+.env
+.env.local
+.supabase/
+.cli-home/
+supabase/.temp/

@@ -1,0 +1,188 @@
+{
+  "as_of": "2026-07-15T08:49:02.822769+08:00",
+  "seasonal_pressure": {
+    "level": "高",
+    "aed_ili_rate": 171.6,
+    "aed_ili_percentile_3y": 84,
+    "aed_ili_change": 0.3,
+    "week_ending": "2026-07-11",
+    "flu_positive_proportion": 0.0779,
+    "flu_positive_change": 0.011,
+    "all_age_admission_rate": 0.427,
+    "model_use": "monitoring_only",
+    "note": "每週發布且有延遲；本版作季節背景，不直接調高即時預測，待較長訓練窗回測後才納入。"
+  },
+  "surge_statistics": {
+    "latest_date": "2026-04-10",
+    "availability": "只在服務需求高峰期間每日更新",
+    "model_use": "candidate_daily_feature"
+  },
+  "operational_context": {
+    "public_holiday_dates": [
+      "20250101",
+      "20250129",
+      "20250130",
+      "20250131",
+      "20250404",
+      "20250418",
+      "20250419",
+      "20250421",
+      "20250501",
+      "20250505",
+      "20250531",
+      "20250701",
+      "20251001",
+      "20251007",
+      "20251029",
+      "20251225",
+      "20251226",
+      "20260101",
+      "20260217",
+      "20260218",
+      "20260219",
+      "20260403",
+      "20260404",
+      "20260406",
+      "20260407",
+      "20260501",
+      "20260525",
+      "20260619",
+      "20260701",
+      "20260926",
+      "20261001",
+      "20261019",
+      "20261225",
+      "20261226",
+      "20270101",
+      "20270206",
+      "20270208",
+      "20270209",
+      "20270326",
+      "20270327",
+      "20270329",
+      "20270405",
+      "20270501",
+      "20270513",
+      "20270609",
+      "20270701",
+      "20270916",
+      "20271001",
+      "20271008",
+      "20271225",
+      "20271227"
+    ],
+    "holiday_model_use": "analogue_matching_feature",
+    "annual_attendance_year": "2024-25",
+    "annual_ae_attendance_by_hospital": {
+      "Pamela Youde Nethersole Eastern Hospital": 112407,
+      "Ruttonjee Hospital": 67698,
+      "St. John Hospital": 8845,
+      "Overall (Hong Kong East Cluster)": 188950,
+      "Queen Mary Hospital": 114325,
+      "Overall (Hong Kong West Cluster)": 114325,
+      "Kwong Wah Hospital": 134389,
+      "Queen Elizabeth Hospital": 191524,
+      "Overall (Kowloon Central Cluster)": 325913,
+      "Tseung Kwan O Hospital": 118366,
+      "United Christian Hospital": 150556,
+      "Overall (Kowloon East Cluster)": 268922,
+      "Caritas Medical Centre": 102250,
+      "North Lantau Hospital": 82476,
+      "Princess Margaret Hospital": 110410,
+      "Yan Chai Hospital": 117793,
+      "Overall (Kowloon West Cluster)": 412929,
+      "Alice Ho Miu Ling Nethersole Hospital": 92703,
+      "North District Hospital": 93090,
+      "Prince of Wales Hospital": 157051,
+      "Overall (New Territories East Cluster)": 342844,
+      "Pok Oi Hospital": 92950,
+      "Tin Shui Wai Hospital": 111932,
+      "Tuen Mun Hospital": 165504,
+      "Overall (New Territories West Cluster)": 370386,
+      "Overall": 2024269
+    },
+    "manpower_year": "2024-25 (as at 31 March 2025)",
+    "manpower_scope": "cluster_all_services_annual_fte",
+    "night_shift_staffing_available": false,
+    "night_capacity_expert_prior": true,
+    "night_capacity_prior_source": "experienced_doctor_oral_account",
+    "night_capacity_regime": "00:00-06:00",
+    "night_capacity_effect_size": null,
+    "morning_capacity_expert_prior": true,
+    "morning_capacity_peak": "around_07:00",
+    "morning_arrival_hypothesis": "working_population_arrivals_and_family_escorts_increase_before_09:00",
+    "morning_effect_size": null,
+    "morning_prior_model_use": "interpretation_only_arrival_service_confounding",
+    "manpower_model_use": "not_used_grain_mismatch",
+    "surge_latest_date": "2026-04-10",
+    "surge_overall": {
+      "surge_year": "2025-26",
+      "date": "2026-04-10",
+      "cluster": "HA Overall",
+      "hospital": "",
+      "ae_first_attend": 5211,
+      "ae_to_med_ip": 1043,
+      "med_bed_occ_rate": 105,
+      "ped_bed_occ_rate": 62
+    },
+    "surge_model_use": "monitoring_only_outside_surge_period",
+    "note": "有經驗醫生口述夜間人手較少；現場經驗亦指 07:00 左右容量較高、09:00 前工作人口到院或陪同家人令需求增加。公開資料沒有逐院逐更人手、分流到達與完成數，故不能從淨等候變化識別效率；模型只把 00–06 視為獨立配對 regime，其他早晨假設暫作解讀。"
+  },
+  "external_event_candidates": {
+    "weather_warnings": {
+      "provider": "Hong Kong Observatory",
+      "live_update": "as_events_change",
+      "historical_database_available": true,
+      "model_use": "candidate_pending_join_and_blocked_backtest"
+    },
+    "district_rainfall": {
+      "provider": "Hong Kong Observatory",
+      "update_frequency": "15_minutes",
+      "model_use": "candidate_regional_demand_feature"
+    },
+    "district_ambulance_calls": {
+      "provider": "Fire Services Department",
+      "update_frequency": "about_quarterly",
+      "model_use": "background_only_not_live_forecasting"
+    },
+    "warning": "氣象與急症需求的關聯不等於能預測某院危急個案數；加入前須用較長時間窗作封鎖回測。"
+  },
+  "sources": [
+    {
+      "label": "急症室傳染病症候群監測",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-dh-chpsebcdde-aed-cdis-syndromic"
+    },
+    {
+      "label": "Flu Express 數據",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-dh-chpsebcddr-flu-express"
+    },
+    {
+      "label": "服務需求高峰期重點數據",
+      "url": "https://data.gov.hk/tc-data/dataset/hospital-hadata-key-statistics-during-surge"
+    },
+    {
+      "label": "醫管局年度急症室求診人次",
+      "url": "https://data.gov.hk/tc-data/dataset/hospital-hadata-service-ambulatory-community"
+    },
+    {
+      "label": "醫管局年度聯網人手",
+      "url": "https://data.gov.hk/tc-data/dataset/hospital-hadata-manpower"
+    },
+    {
+      "label": "香港公眾假期",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-dpo-statistic-cal"
+    },
+    {
+      "label": "天文台生效中天氣警告 API",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-hko-rss-weather-warning-information"
+    },
+    {
+      "label": "天文台每 15 分鐘分區雨量",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-hko-rss-rainfall-in-the-past-hour"
+    },
+    {
+      "label": "消防處十八區救護召喚（季度）",
+      "url": "https://data.gov.hk/tc-data/dataset/hk-fsd-fsd1-fsdamb18"
+    }
+  ]
+}

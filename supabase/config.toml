@@ -1,0 +1,22 @@
+project_id = "aed-pred"
+
+[api]
+enabled = true
+schemas = ["public", "graphql_public"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://127.0.0.1:5173"]
+enable_anonymous_sign_ins = true
+
+[functions.wait-session-start]
+verify_jwt = true
+[functions.wait-session-get]
+verify_jwt = true
+[functions.wait-session-event]
+verify_jwt = true
+[functions.wait-session-recover]
+verify_jwt = true
+[functions.wait-session-delete]
+verify_jwt = true

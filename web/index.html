@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以醫管局歷史快照估計香港急症室一小時後輪候時間與延誤風險。">
+  <title>急症室 · 抵達時間預測</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="回到頁首">
+      <span class="brand-mark">急</span>
+      <span>ER / ETA</span>
+    </a>
+    <div class="status" id="freshness"><span class="status-dot"></span>載入官方資料…</div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="eyebrow">HONG KONG A&amp;E FORECAST · BETA</div>
+      <h1>抵達急症室，<br><em>大概要等多久？</em></h1>
+      <p class="hero-copy">用醫管局每 15 分鐘歷史快照，找出同一醫院過往相似壅塞狀態。</p>
+    </section>
+
+    <section class="control-panel" aria-label="預測設定">
+      <label>
+        <span>分流類別</span>
+        <select id="triage">
+          <option value="t45">IV / V · 次緊急、非緊急</option>
+          <option value="t3">III · 緊急</option>
+        </select>
+      </label>
+      <label>
+        <span>已經等候</span>
+        <div class="input-with-unit"><input id="elapsed" type="number" min="0" max="1440" step="15" value="0"><b>分鐘</b></div>
+      </label>
+      <div class="forecast-lock"><span>預計抵達</span><strong>60</strong><small>分鐘後</small></div>
+    </section>
+
+    <section class="summary" aria-live="polite">
+      <div><span>涵蓋</span><strong id="hospital-count">—</strong><small>間急症室</small></div>
+      <div><span>模型訓練</span><strong id="snapshot-count">—</strong><small>個官方快照</small></div>
+      <div><span>目前最短</span><strong id="best-wait">—</strong><small>中位估計</small></div>
+    </section>
+
+    <section class="results-section">
+      <div class="section-heading">
+        <div><span class="section-no">01</span><h2>逐院比較</h2></div>
+        <p>按所選抵達時間的預計中位輪候時間排列</p>
+      </div>
+      <div id="hospital-grid" class="hospital-grid"></div>
+    </section>
+
+    <section class="method-section">
+      <div class="section-heading inverse">
+        <div><span class="section-no">02</span><h2>怎樣理解 constraint？</h2></div>
+      </div>
+      <div class="method-grid">
+        <article>
+          <span class="method-index">A</span>
+          <h3>隱含壓力，不是實際容量</h3>
+          <p id="pressure-definition"></p>
+        </article>
+        <article>
+          <span class="method-index">B</span>
+          <h3>相似狀態的未來時距</h3>
+          <p>按當前 p50、p95 差距、趨勢、時段、星期、公眾假期、00–06 夜間容量 regime 及緊急個案訊號配對歷史。資料分成訓練、校準和最後測試；在 persistence、趨勢、類比與混合模型中選勝出者，不勝基準便自動保護。</p>
+        </article>
+        <article>
+          <span class="method-index">C</span>
+          <h3>突發延誤機率</h3>
+          <p>相似狀態中，未來輪候顯著上升，或緊急／危殆訊號由無轉有的比例。這是情境風險，不代表能預知某宗救護車個案。</p>
+        </article>
+      </div>
+      <aside class="safety-note">
+        <strong>遇到危急情況，不要按輪候時間選擇求醫地點。</strong>
+        <span>請致電 999；急症室會按臨床需要分流，危殆病人優先。</span>
+      </aside>
+    </section>
+
+    <section class="sources-section">
+      <div class="section-heading"><div><span class="section-no">03</span><h2>資料與限制</h2></div></div>
+      <div class="sources-layout">
+        <ul id="limitations"></ul>
+        <div id="sources" class="source-links"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="detail-dialog">
+    <button class="dialog-close" aria-label="關閉">×</button>
+    <div id="dialog-content"></div>
+  </dialog>
+
+  <footer><span>ER / ETA</span><p>開放數據研究原型 · 非醫療建議</p></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
