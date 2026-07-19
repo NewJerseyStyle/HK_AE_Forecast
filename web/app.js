@@ -281,6 +281,18 @@ function openScenarioDetail(id) {
 
 const LIVE_URL = 'https://www.ha.org.hk/opendata/aed/aedwtdata2-en.json';
 const LIVE_STORAGE_KEY = 'aed-pred-live-history-v1';
+const LIVE_REFRESH_MS = 5 * 60 * 1000;
+const LIVE_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = LIVE_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function parseLiveWait(value) {
   if (!value || value.toLowerCase().includes('multiple resuscitation')) return null;
@@ -315,7 +327,7 @@ function saveLiveHistory(history) {
 }
 
 async function refreshLiveData() {
-  const response = await fetch(LIVE_URL + '?t=' + Date.now(), { cache: 'no-store' });
+  const response = await fetchWithTimeout(LIVE_URL + '?t=' + Date.now(), { cache: 'no-store' });
   if (!response.ok) throw new Error('HA live HTTP ' + response.status);
   const payload = await response.json();
   const observedAt = parseLiveTimestamp(payload.updateTime);
@@ -369,6 +381,16 @@ async function refreshLiveData() {
   state.live = true;
 }
 
+async function refreshLiveAndRender() {
+  if (!state.model) return;
+  try {
+    await refreshLiveData();
+  } catch (_) {
+    state.live = false;
+  }
+  render();
+}
+
 async function init() {
   try {
     const response = await fetch("data/model.json", { cache: "no-store" });
@@ -376,6 +398,9 @@ async function init() {
     state.model = await response.json();
     populateHospitalSelect();
     syncModeControls();
+    // Show the precomputed forecast immediately; optional live/context requests
+    // must not leave the results area empty.
+    render();
     try {
       const contextResponse = await fetch('data/context.json', { cache: 'no-store' });
       if (contextResponse.ok) {
@@ -434,4 +459,4 @@ document.querySelector('#priority-pressure').addEventListener('change', event =>
   render();
 });
 init();
-setInterval(init, 5 * 60 * 1000);
+setInterval(refreshLiveAndRender, LIVE_REFRESH_MS);

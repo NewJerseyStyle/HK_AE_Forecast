@@ -23,6 +23,14 @@ jobs:
       VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: 0.11.29
+          enable-cache: true
+      - name: Refresh the precomputed forecast model
+        continue-on-error: true
+        run: uv run --locked aed-pred refresh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
