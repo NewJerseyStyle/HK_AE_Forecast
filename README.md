@@ -37,6 +37,8 @@ uv run python -m http.server 8000 --directory web
 
 ## GitHub Pages
 
+Health monitoring, consent-gated GA4 setup, and Stage 2 model release gates are documented in [docs/operations.md](docs/operations.md).
+
 Web app 有兩個使用情境：
 
 - 「尚未到院」先選預計抵達時間，再按該時距的中位輪候估算由快至慢排序 18 間急症室；

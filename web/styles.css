@@ -117,6 +117,13 @@ dialog::backdrop { background: rgba(20,34,29,.82); }
 
 footer { display: flex; justify-content: space-between; padding: 28px clamp(20px, 5vw, 76px); color: white; background: var(--ink); font: 11px var(--mono); }
 footer p { margin: 0; }
+.analytics-settings { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+.analytics-consent { position: fixed; z-index: 50; right: 20px; bottom: 20px; width: min(520px, calc(100vw - 40px)); padding: 18px; border: 2px solid var(--ink); background: white; box-shadow: 7px 7px 0 var(--acid); }
+.analytics-consent p { display: grid; gap: 5px; margin: 0 0 14px; }
+.analytics-consent p span { font-size: 13px; line-height: 1.5; }
+.analytics-consent div { display: flex; justify-content: flex-end; gap: 8px; }
+.analytics-consent button { padding: 10px 14px; border: 1px solid var(--ink); background: white; cursor: pointer; font-weight: 700; }
+.analytics-consent .consent-accept { background: var(--ink); color: white; }
 
 .research-section { padding: 72px clamp(20px, 7vw, 110px); background: #eef1ed; border-top: 1px solid var(--ink); }
 .study-shell { max-width: 920px; margin: 38px auto 0; padding: 28px; border: 1px solid var(--ink); background: var(--paper); box-shadow: 10px 10px 0 var(--acid); }

@@ -1,0 +1,57 @@
+name: Supabase health and readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 1,7,13,19 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: supabase-health
+  cancel-in-progress: true
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Query database-backed health endpoint
+        id: probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          : ${SUPABASE_URL:?Missing repository variable VITE_SUPABASE_URL}
+          : ${SUPABASE_PUBLISHABLE_KEY:?Missing repository variable VITE_SUPABASE_PUBLISHABLE_KEY}
+          endpoint=${SUPABASE_URL%/}/functions/v1/health-check
+          payload=$(curl --fail --silent --show-error --retry 2 --max-time 20 \
+            --header apikey:${SUPABASE_PUBLISHABLE_KEY} ${endpoint})
+          jq -e '.ok == true and .database == true' <<< ${payload} > /dev/null
+          echo eligible=$(jq -r '.model_readiness.eligible_to_train // false' <<< ${payload}) >> ${GITHUB_OUTPUT}
+          jq '{ok, database, checked_at, model_readiness}' <<< ${payload}
+
+      - name: Open a health incident issue
+        if: failure()
+        shell: bash
+        run: |
+          existing=$(gh issue list --state open --search 'Supabase health check failed in:title' --json number --jq '.[0].number // empty')
+          if [ -z ${existing} ]; then
+            gh issue create --title 'Supabase health check failed' \
+              --body 'The scheduled database-backed health check failed. Check the Actions log and Supabase project status.'
+          fi
+
+      - name: Open the Stage 2 readiness issue
+        if: steps.probe.outputs.eligible == 'true'
+        shell: bash
+        run: |
+          existing=$(gh issue list --state open --search 'Stage 2 model data threshold reached in:title' --json number --jq '.[0].number // empty')
+          if [ -z ${existing} ]; then
+            gh issue create --title 'Stage 2 model data threshold reached' \
+              --body 'The volume, coverage, follow-up and data-quality gates are met. Train and time-split backtest a challenger; do not promote unless calibration and Brier-score gates pass.'
+          fi

@@ -4,6 +4,8 @@ import {
   loadLocalSession, queueEvent, reminderDue, researchConfigured, saveLocalSession, validateEventTime,
 } from "./research-core.js";
 
+import './analytics.js';
+
 const local = window.localStorage;
 let current = loadLocalSession(local);
 let startChallengeToken = "";
