@@ -212,6 +212,25 @@ footer p { margin: 0; }
 #waiting-worse-advice { grid-column: 1 / -1; padding: 16px; border: 1px solid var(--orange); background: #fff0cb; color: var(--ink); }
 #waiting-worse-advice strong, #waiting-worse-advice span { display: block; }
 #waiting-worse-advice span { margin-top: 5px; line-height: 1.5; }
+.waiting-communication-guide { grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,.25); }
+.waiting-communication-guide summary { padding: 20px 0 0; display: grid; gap: 5px; cursor: pointer; list-style: none; }
+.waiting-communication-guide summary::-webkit-details-marker { display: none; }
+.waiting-communication-guide summary::after { content: '+'; grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; color: var(--acid); font: 32px var(--mono); }
+.waiting-communication-guide[open] summary::after { content: '−'; }
+.waiting-communication-guide summary span, .guide-step { color: var(--acid); font: 10px var(--mono); letter-spacing: .08em; }
+.waiting-communication-guide summary strong { font-size: 17px; }
+.waiting-communication-guide summary small { color: #aeb9b4; }
+.communication-guide-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 20px; }
+.communication-guide-body section { padding: 18px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.04); }
+.communication-guide-body h3 { margin: 7px 0 10px; }
+.communication-guide-body ol { padding-left: 20px; line-height: 1.65; }
+.communication-guide-body p { color: #d2d9d5; font-size: 12px; line-height: 1.65; }
+.handoff-template { grid-column: 1 / -1; padding: 18px; background: white; color: var(--ink); }
+.handoff-template p { color: #46534d; font: 12px/1.7 var(--mono); }
+.handoff-template button { min-height: 40px; padding: 9px 13px; border: 1px solid var(--ink); background: var(--acid); cursor: pointer; font-weight: 700; }
+#copy-handoff-status { margin-left: 10px; font-size: 11px; }
+.guide-sources { grid-column: 1 / -1; margin: 0; }
+.guide-sources a { color: var(--acid); }
 .hidden { display: none !important; }
 .season-banner { max-width: 1100px; margin: 0 auto 26px; padding: 20px 24px; display: grid; grid-template-columns: .7fr 1.3fr; gap: 30px; border: 1px solid var(--ink); background: #fff6d8; }
 .season-banner span, .season-banner small { display: block; color: #66736d; font: 10px/1.5 var(--mono); }
@@ -252,6 +271,7 @@ footer p { margin: 0; }
   .season-banner { margin-inline: 20px; }
   .planning-choice { grid-template-columns: 1fr; }
   .red-flag-box ul { columns: 1; }
+  .communication-guide-body { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 540px) {
@@ -281,4 +301,5 @@ footer p { margin: 0; }
   .recovery-card code { font-size: 18px; letter-spacing: .07em; }
   .journey-panel { padding: 20px !important; }
   .waiting-journey { grid-template-columns: 1fr; }
+  #copy-handoff-status { display: block; margin: 8px 0 0; }
 }

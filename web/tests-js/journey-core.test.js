@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planningRecommendation } from "../journey-core.js";
+import { CLINICAL_HANDOFF_TEMPLATE, planningRecommendation } from "../journey-core.js";
 
 describe("pre-arrival safety journey", () => {
   it("never shows wait-time ranking for emergency or uncertain urgent paths", () => {
@@ -15,5 +15,13 @@ describe("pre-arrival safety journey", () => {
   it("rejects unknown paths instead of defaulting to a clinical category", () => {
     expect(planningRecommendation("t3")).toBeNull();
     expect(planningRecommendation()).toBeNull();
+  });
+});
+
+describe("clinical handoff guide", () => {
+  it("prompts for medication identity, dose and time without collecting answers", () => {
+    expect(CLINICAL_HANDOFF_TEMPLATE).toContain("藥名／劑量");
+    expect(CLINICAL_HANDOFF_TEMPLATE).toContain("今天");
+    expect(CLINICAL_HANDOFF_TEMPLATE).toContain("服用了");
   });
 });

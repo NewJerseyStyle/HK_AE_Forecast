@@ -1,5 +1,5 @@
 import "./research-ui.js";
-import { planningRecommendation } from "./journey-core.js";
+import { CLINICAL_HANDOFF_TEMPLATE, planningRecommendation } from "./journey-core.js";
 
 const state = { model: null, triage: "t45", elapsed: 0 };
 
@@ -35,6 +35,41 @@ panel.insertAdjacentHTML('afterbegin', `<div class='mode-switch' role='group' ar
   <div><span>已經完成登記／分流</span><h2 id='waiting-title'>等候期間，病情變化比倒數更重要</h2><p>如痛楚、呼吸、清醒程度或其他症狀轉差，立即告知分流護士，不要等待本頁刷新。</p></div>
   <button type='button' id='waiting-worse'>我的情況變差了</button>
   <div id='waiting-worse-advice' class='hidden' role='alert'><strong>現在通知急症室職員重新評估</strong><span>如無法接觸職員或情況危急，請身旁的人協助求助。此網頁不能替你重新分流。</span></div>
+  <details class='waiting-communication-guide'>
+    <summary><span>可選指引</span><strong>在繁忙環境下，如何向護士和醫生說清楚？</strong><small>需要時才展開 · 不會要求你輸入或提交病情</small></summary>
+    <div class='communication-guide-body'>
+      <section>
+        <span class='guide-step'>01 · 分流護士／重新評估</span>
+        <h3>先說最影響安全的改變</h3>
+        <ol><li><strong>現在最主要的問題：</strong>不要先講完整病史。</li><li><strong>何時開始、突然或逐漸：</strong>說明大約時間。</li><li><strong>與剛才相比有何變化：</strong>尤其是呼吸、清醒程度、出血、無力或痛楚突然加劇。</li><li><strong>會改變處理的重要資料：</strong>藥物過敏、懷孕可能、抗凝血藥、重大疾病或近期手術。</li></ol>
+        <p>如果病情在分流後轉差，直接說：「我的情況和分流時不同，請重新評估。」不要只說「等了很久」。</p>
+      </section>
+      <section>
+        <span class='guide-step'>02 · 第一次見醫生</span>
+        <h3>用同一條時間線，減少遺漏</h3>
+        <ol><li>主訴與開始時間</li><li>症狀怎樣變化、甚麼令它改善或惡化</li><li>伴隨症狀，以及重要的「沒有」</li><li>相關病史、藥物過敏、正在服用的處方藥／成藥／中藥／補充劑</li><li>已做過的檢查、治療和你最擔心的問題</li></ol>
+        <p>可以把藥物包裝、藥物名單和相關檢查報告交給醫護查看。若記憶或表達困難，可請熟悉情況的人陪同補充。</p>
+      </section>
+      <section class='medication-safety'>
+        <span class='guide-step'>03 · 痛楚與自行用藥</span>
+        <h3>不要假設一定會或一定不會獲得止痛</h3>
+        <p>分流按臨床緊急程度排序；等候期間可能有護理、檢查或治療，但何時提供及是否適合因人和現場安排而異。你可以主動詢問職員能否評估痛楚及提供合適處理。</p>
+        <p>若打算服用自己帶來的止痛藥或成藥，最好先詢問護士、醫生或藥劑師。若已服用，務必交代<strong>藥名、劑量／粒數、服用時間和效果</strong>；不要重複服用含相同成分的產品，也不要超過標籤或醫護指示劑量。</p>
+      </section>
+      <section class='waiting-reality'>
+        <span class='guide-step'>04 · 漫長等候的心理準備</span>
+        <h3>分流不是個人倒數</h3>
+        <p>較高優先個案可隨時令隊列暫停，等候亦可能比最初估計長。這可能是一段漫長、疲累和難熬的時間。分流的目的首先是辨認和優先處理風險，不能保證立即舒適或立即完成診斷及治療。</p>
+        <p>如病情改變，重新通知職員；如要離開候診區、進食飲水或服藥而不確定是否會影響檢查，先詢問職員。</p>
+      </section>
+      <div class='handoff-template'>
+        <strong>可複製的空白說明框架</strong>
+        <p id='handoff-template-text'>${CLINICAL_HANDOFF_TEMPLATE}</p>
+        <button type='button' id='copy-handoff-template'>複製框架</button><span id='copy-handoff-status' role='status'></span>
+      </div>
+      <p class='guide-sources'>官方參考：<a data-sensitive-navigation href='https://www3.ha.org.hk/pwh/content/comm/charterpamphlet_e.html' target='_blank' rel='noreferrer'>醫管局病人約章</a> · <a data-sensitive-navigation href='https://www.drugoffice.gov.hk/eps/do/tc/consumer/news_informations/knowledge_on_medicines/anti_inflammation_and_painkilling_drugs.html' target='_blank' rel='noreferrer'>衞生署止痛藥物須知</a></p>
+    </div>
+  </details>
 </aside>`);
 const elapsedLabel = document.querySelector('#elapsed').closest('label');
 const triageLabel = document.querySelector('#triage').closest('label');
@@ -139,6 +174,15 @@ document.querySelectorAll('[data-planning-path]').forEach(button =>
 );
 document.querySelector('#waiting-worse')?.addEventListener('click', () => {
   document.querySelector('#waiting-worse-advice').classList.remove('hidden');
+});
+document.querySelector('#copy-handoff-template')?.addEventListener('click', async () => {
+  const status = document.querySelector('#copy-handoff-status');
+  try {
+    await navigator.clipboard.writeText(CLINICAL_HANDOFF_TEMPLATE);
+    status.textContent = '已複製空白框架';
+  } catch {
+    status.textContent = '未能自動複製；可長按上方文字選取。';
+  }
 });
 document.addEventListener('click', event => {
   if (event.target.closest('[data-sensitive-navigation]')) event.stopImmediatePropagation();

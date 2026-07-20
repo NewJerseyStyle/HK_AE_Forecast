@@ -40,6 +40,8 @@ The pre-arrival safety screen is deliberately ephemeral: its answer remains only
 
 The screen is a safety gate, not a triage instrument. Hospital Authority triage categories are assigned by experienced registered nursing staff. The red-flag examples are based on official Hospital Authority, Centre for Health Protection, and Fire Services Department safety information, are not exhaustive, and must never be used to rule out an emergency.
 
+The optional in-hospital communication guide contains static prompts only. It must not gain symptom text fields, medication inputs, clipboard reads, analytics events, or database submission. Copying writes only the blank handoff template to the clipboard. Avoid universal claims that no assessment, treatment, or analgesia occurs before first doctor contact; actual care and timing vary by clinical need and local workflow.
+
 ## Stage 2 model promotion
 
 The database now computes readiness without exporting raw participant records. `eligible_to_train` requires all of the following:

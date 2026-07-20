@@ -28,3 +28,6 @@ export const PLANNING_PATHS = Object.freeze({
 export function planningRecommendation(path) {
   return PLANNING_PATHS[path] || null;
 }
+
+export const CLINICAL_HANDOFF_TEMPLATE =
+  "我最主要的問題是＿＿。由＿＿（時間）開始，現在是＿＿，比開始時＿＿。同時有／沒有＿＿。重要病史或藥物過敏：＿＿。今天＿＿時服用了＿＿（藥名／劑量），效果是＿＿。我最擔心／最想問的是＿＿。";
