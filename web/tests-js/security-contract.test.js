@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
 const migration = readFileSync(resolve(root, "supabase/migrations/202607150001_wait_research.sql"), "utf8");
+const queueMigration = readFileSync(resolve(root, "supabase/migrations/20260720102953_queue_observations.sql"), "utf8");
 const edge = readFileSync(resolve(root, "supabase/functions/_shared/core.ts"), "utf8");
 const config = readFileSync(resolve(root, "supabase/config.toml"), "utf8");
 
@@ -15,6 +16,9 @@ describe("research security contract", () => {
     }
     expect(migration).toContain("revoke all on all tables in schema public from anon, authenticated");
     expect(migration).not.toMatch(/create\s+policy[\s\S]+to\s+authenticated/i);
+    expect(queueMigration).toContain("alter table public.queue_observations enable row level security");
+    expect(queueMigration).toContain("revoke all on table public.queue_observations from public, anon, authenticated");
+    expect(queueMigration).not.toMatch(/create\s+policy/i);
   });
 
   it("keeps privileged credentials outside browser source", () => {
@@ -24,7 +28,7 @@ describe("research security contract", () => {
   });
 
   it("requires JWTs, owner checks, HMAC recovery and origin checks", () => {
-    expect(config.match(/verify_jwt = true/g)).toHaveLength(5);
+    expect(config.match(/verify_jwt = true/g)).toHaveLength(6);
     expect(edge).toContain("eq(\"owner_user_id\", userId)");
     expect(edge).toContain("name: \"HMAC\"");
     expect(edge).toContain("origin_not_allowed");

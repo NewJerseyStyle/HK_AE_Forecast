@@ -330,11 +330,18 @@ async function refreshLiveData() {
     if (!live) return;
     const critical = live.manageT1case === 'Y' || live.manageT1case === 'N/A';
     const emergency = live.manageT2case === 'Y' || live.manageT2case === 'N/A';
+    const previousPriority = Boolean(hospital.signals.critical || hospital.signals.emergency || hospital.signals.multiple_resuscitation);
     hospital.signals = {
       critical,
       emergency,
       multiple_resuscitation: live.manageT1case === 'N/A' || live.manageT2case === 'N/A'
     };
+    const currentPriority = critical || emergency || hospital.signals.multiple_resuscitation;
+    window.dispatchEvent(new CustomEvent('aed:official-priority-status', { detail: {
+      hospitalId: hospital.id, active: currentPriority, newlyActive: !previousPriority && currentPriority,
+      critical, emergency, multipleResuscitation: hospital.signals.multiple_resuscitation,
+      updatedAt: observedAt.toISOString(),
+    } }));
     [['t3', 't3p50', 't3p95'], ['t45', 't45p50', 't45p95']].forEach(([triage, p50Field, p95Field]) => {
       const metric = hospital.triage[triage];
       const liveP50 = parseLiveWait(live[p50Field]);

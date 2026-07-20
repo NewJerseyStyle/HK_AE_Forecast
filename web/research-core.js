@@ -62,7 +62,8 @@ export function loadLocalSession(storage) {
 
 export function queueEvent(storage, item) {
   const items = readJson(storage, QUEUE_KEY, []);
-  if (!items.some((entry) => entry.event_id === item.event_id)) items.push(item);
+  const itemId = item.event_id || item.observation_id;
+  if (!items.some((entry) => (entry.event_id || entry.observation_id) === itemId)) items.push(item);
   storage.setItem(QUEUE_KEY, JSON.stringify(items));
   return items;
 }

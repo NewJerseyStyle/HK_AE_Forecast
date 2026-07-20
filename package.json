@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.5",
+    "driver.js": "1.8.0",
     "qrcode": "1.5.4"
   },
   "devDependencies": {

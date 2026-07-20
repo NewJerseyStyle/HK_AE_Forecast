@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.110.5";
 
-export type Operation = "start" | "get" | "event" | "recover" | "delete";
+export type Operation = "start" | "get" | "event" | "queue" | "recover" | "delete";
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const LIVE_URL = "https://www.ha.org.hk/opendata/aed/aedwtdata2-en.json";
 const HOSPITAL_IDS = new Set([
@@ -132,8 +132,10 @@ function parseWait(value: unknown): number | null {
 }
 
 async function officialContext(admin: SupabaseClient, hospitalId: string, triage: "t3" | "t4" | "t5" | "unknown") {
-  const context = { id: null as string | null, p50: null as number | null, p95: null as number | null, status: "unavailable" };
-  if (triage === "unknown") return context;
+  const context = {
+    id: null as string | null, p50: null as number | null, p95: null as number | null,
+    status: "unavailable", critical: false, emergency: false, multipleResuscitation: false,
+  };
   try {
     const response = await fetch(LIVE_URL, { signal: AbortSignal.timeout(6000) });
     if (!response.ok) return context;
@@ -141,8 +143,8 @@ async function officialContext(admin: SupabaseClient, hospitalId: string, triage
     const row = payload.waitTime?.find((item: Record<string, unknown>) => slug(String(item.hospName || "")) === hospitalId);
     if (!row) return context;
     const prefix = triage === "t3" ? "t3" : "t45";
-    const p50 = parseWait(row[`${prefix}p50`]);
-    const p95 = parseWait(row[`${prefix}p95`]);
+    const p50 = triage === "unknown" ? null : parseWait(row[`${prefix}p50`]);
+    const p95 = triage === "unknown" ? null : parseWait(row[`${prefix}p95`]);
     const record = {
       hospital_id: hospitalId, triage, p50_minutes: p50, p95_minutes: p95,
       critical_signal: row.manageT1case === "Y" || row.manageT1case === "N/A",
@@ -151,7 +153,11 @@ async function officialContext(admin: SupabaseClient, hospitalId: string, triage
       source_status: p50 === null || p95 === null ? "unavailable" : "available",
     };
     const { data } = await admin.from("official_context_snapshots").insert(record).select("id").single();
-    return { id: data?.id || null, p50, p95, status: record.source_status };
+    return {
+      id: data?.id || null, p50, p95, status: record.source_status,
+      critical: record.critical_signal, emergency: record.emergency_signal,
+      multipleResuscitation: record.multiple_resuscitation,
+    };
   } catch {
     return context;
   }
@@ -274,8 +280,11 @@ async function perform(req: Request, operation: Operation, admin: SupabaseClient
   const sessionId = stringField(input.session_id, "session_id", 50);
   const session = await ownedSession(admin, sessionId, userId);
   if (operation === "get") {
-    const { data: events } = await admin.from("wait_events").select("id,event_type,event_at,reported_at,same_triage_position,priority_pressure").eq("session_id", sessionId).order("event_at");
-    return { session: publicSession(session), events: events || [] };
+    const [{ data: events }, { data: observations }] = await Promise.all([
+      admin.from("wait_events").select("id,event_type,event_at,reported_at,same_triage_position,priority_pressure").eq("session_id", sessionId).order("event_at"),
+      admin.from("queue_observations").select("id,observation_kind,observation_source,observed_at,reported_at").eq("session_id", sessionId).order("observed_at"),
+    ]);
+    return { session: publicSession(session), events: events || [], observations: observations || [] };
   }
   if (operation === "delete") {
     const { error } = await admin.from("wait_sessions").delete().eq("id", sessionId).eq("owner_user_id", userId);
@@ -284,6 +293,49 @@ async function perform(req: Request, operation: Operation, admin: SupabaseClient
   }
 
   if (session.status !== "waiting") throw new ApiError(409, "session_closed");
+  if (operation === "queue") {
+    const observationId = stringField(input.observation_id, "observation_id", 50);
+    const observationKind = enumField(input.observation_kind, "observation_kind", [
+      "higher_priority_called", "queue_not_near", "queue_near", "queue_called",
+      "priority_delay_confirmed", "priority_no_delay",
+    ] as const);
+    const observationSource = enumField(input.observation_source, "observation_source", [
+      "ha_go", "hospital_screen", "staff", "direct_observation", "official_api_prompt",
+    ] as const);
+    const observedAt = isoTime(input.observed_at, "observed_at");
+    if (new Date(observedAt) < new Date(session.arrival_at)) throw new ApiError(422, "observation_before_arrival");
+    const { data: prior } = await admin.from("queue_observations")
+      .select("id,session_id,observation_kind,observation_source,observed_at")
+      .eq("id", observationId).maybeSingle();
+    if (prior) {
+      if (prior.session_id !== sessionId || prior.observation_kind !== observationKind ||
+          prior.observation_source !== observationSource || prior.observed_at !== observedAt) {
+        throw new ApiError(409, "observation_id_conflict");
+      }
+      return { observation: prior, replayed: true };
+    }
+    const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+    const { count } = await admin.from("queue_observations").select("id", { count: "exact", head: true })
+      .eq("session_id", sessionId).gte("reported_at", oneMinuteAgo);
+    if ((count || 0) >= 12) throw new ApiError(429, "observation_rate_limited");
+    const context = await officialContext(admin, session.hospital_id, session.triage);
+    const record = {
+      id: observationId, session_id: sessionId, observation_kind: observationKind,
+      observation_source: observationSource, observed_at: observedAt,
+      official_context_id: context.id,
+      client_version: typeof input.client_version === "string" ? input.client_version.slice(0, 40) : null,
+    };
+    const { data, error } = await admin.from("queue_observations").insert(record)
+      .select("id,observation_kind,observation_source,observed_at,reported_at").single();
+    if (error || !data) throw new ApiError(500, "storage_error");
+    return {
+      observation: data,
+      official_signal: {
+        critical: context.critical, emergency: context.emergency,
+        multiple_resuscitation: context.multipleResuscitation,
+      },
+    };
+  }
   const eventType = enumField(input.event_type, "event_type", ["still_waiting", "seen_doctor", "left_without_doctor", "transferred"] as const);
   const eventAt = isoTime(input.event_at, "event_at");
   if (new Date(eventAt) < new Date(session.arrival_at)) throw new ApiError(422, "event_before_arrival");

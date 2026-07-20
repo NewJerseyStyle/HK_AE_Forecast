@@ -54,4 +54,16 @@ describe("longitudinal event handling", () => {
     expect((await flushQueue(storage, sender)).remaining).toBe(0);
     expect(sender).toHaveBeenCalledTimes(2);
   });
+
+  it("deduplicates queue observations and preserves their endpoint", async () => {
+    const storage = memoryStorage();
+    const observation = {
+      endpoint: "wait-session-queue", observation_id: "observation-42",
+      observation_kind: "higher_priority_called",
+    };
+    queueEvent(storage, observation); queueEvent(storage, observation);
+    const sender = vi.fn().mockResolvedValue({});
+    expect((await flushQueue(storage, sender)).sent).toBe(1);
+    expect(sender).toHaveBeenCalledWith(observation);
+  });
 });

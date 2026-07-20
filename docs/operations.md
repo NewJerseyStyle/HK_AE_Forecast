@@ -11,6 +11,19 @@ npx supabase db push
 npx supabase functions deploy health-check --project-ref zmpdxrlaudsgwlmzstql --use-api
 ```
 
+## Queue observations and HA Go guidance
+
+Deploy the queue-observation endpoint after pushing its migration:
+
+```powershell
+npx supabase db push
+npx supabase functions deploy wait-session-queue --project-ref zmpdxrlaudsgwlmzstql --use-api
+```
+
+The browser uses Driver.js to explain how a participant can check HA Go EasyQ, the hospital screen, or staff information. A participant may report that a higher-priority category was called, that their queue is not near, that it is near, or that they have been called. Do not collect HA Go credentials, ticket numbers, screenshots, symptoms, or free text.
+
+The public Hospital Authority A&E feed exposes hospital-level critical/emergency treatment signals, not patient-level queue numbers. When such a signal changes from inactive to active, the app asks the participant separately whether their own queue appeared to stall. Keep these two facts separate in analysis: an official priority signal is context, while delay is a participant observation. Neither alone proves causation or improper queue jumping.
+
 GitHub disables scheduled workflows in public repositories after 60 days without repository activity. Treat this workflow as a short-term Free Plan safeguard. For durable monitoring, point an external uptime monitor at the same endpoint and send the `apikey` header containing the publishable key. Upgrade to Supabase Pro before the study becomes operationally important.
 
 ## Web analytics

@@ -148,9 +148,29 @@ footer p { margin: 0; }
 .estimate-box small { color: var(--orange); font: 10px var(--mono); }
 .estimate-box strong { display: block; margin: 12px 0 6px; font-size: 24px; }
 .estimate-box span, .estimate-box p { color: #56645d; font-size: 12px; line-height: 1.6; }
+.official-signal-box { margin-top: 14px; padding: 16px; border: 1px solid var(--ink); background: #eef1ed; }
+.official-signal-box small, .official-signal-box strong, .official-signal-box span { display: block; }
+.official-signal-box small { color: #66736d; font: 10px var(--mono); }
+.official-signal-box strong { margin-top: 8px; }
+.official-signal-box span { margin-top: 5px; color: #66736d; font-size: 11px; }
+.official-priority-prompt { margin-top: 14px; padding: 18px; border: 2px solid var(--orange); background: #fff0cb; }
+.official-priority-prompt p { line-height: 1.6; }
+.official-priority-prompt div { display: flex; flex-wrap: wrap; gap: 10px; }
+.official-priority-prompt button { min-height: 42px; padding: 9px 13px; border: 1px solid var(--ink); background: white; cursor: pointer; font-weight: 700; }
 .event-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
 .event-actions button { background: white; }
 .event-actions button:first-child { background: var(--acid); }
+.queue-observation-card { margin-top: 24px; padding: 20px; border: 1px solid var(--ink); background: white; }
+.queue-observation-card > div:first-child { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.queue-observation-card h3 { margin: 0; }
+.queue-observation-card p, .queue-observation-card > small { color: #56645d; font-size: 12px; line-height: 1.6; }
+.queue-guide-trigger { padding: 8px 11px; border: 1px solid var(--ink); background: transparent; cursor: pointer; font-weight: 700; }
+.queue-observation-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 14px 0; }
+.queue-observation-actions button { min-height: 46px; padding: 10px; border: 1px solid var(--ink); background: #f6f7f3; cursor: pointer; font-weight: 700; }
+.queue-observation-actions button:first-child { background: #fff0cb; border-color: var(--orange); }
+.driver-popover { font-family: var(--sans); }
+.driver-popover-title { font-size: 17px; }
+.driver-popover-description { line-height: 1.6; }
 .reminder { margin: 18px 0; padding: 14px; background: #fff0cb; border: 1px solid var(--orange); font-weight: 700; }
 #seen-time { margin-top: 18px; grid-template-columns: 1fr auto !important; }
 .recovery-card { margin-top: 24px; padding: 18px; border: 1px dashed var(--ink); background: #f6f7f3; }
@@ -225,5 +245,7 @@ footer p { margin: 0; }
   .cycle-detail > div > div { border-bottom: 1px solid var(--ink); }
   .study-shell { padding: 18px; box-shadow: 6px 6px 0 var(--acid); }
   #study-content form, .event-actions, #seen-time { grid-template-columns: 1fr !important; }
+  .queue-observation-actions { grid-template-columns: 1fr; }
+  .official-priority-prompt div { flex-direction: column; }
   .recovery-card code { font-size: 18px; letter-spacing: .07em; }
 }
