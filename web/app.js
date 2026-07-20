@@ -21,13 +21,13 @@ elapsedLabel.insertAdjacentHTML('beforebegin', `<label class='hospital-field wai
   <select id='current-hospital' aria-label='你所在的醫院'></select>
 </label>`);
 elapsedLabel.insertAdjacentHTML('afterend', `<div class='queue-context waiting-only hidden'>
-  <label><span>同一分流級別位置（如知道）</span><div class='input-with-unit'><input id='queue-position' type='number' min='1' step='1' placeholder='例如 2'><b>位</b></div></label>
-  <label><span>較高優先度個案</span><select id='priority-pressure'>
-    <option value='unknown'>不知道</option>
-    <option value='few'>前方有少量</option>
-    <option value='several'>前方有幾個</option>
+  <label><span>你在同一分流級別中大約排第幾？（選填）</span><div class='input-with-unit'><input id='queue-position' type='number' min='1' step='1' placeholder='例如 2' aria-describedby='queue-position-help'><b>位</b></div><small class='field-help' id='queue-position-help'>例如「Cat 4 排第 2」；不是全急症室總次序。</small></label>
+  <label><span>前方較高優先度個案（如知道）</span><select id='priority-pressure' aria-describedby='queue-priority-help'>
+    <option value='unknown'>不知道／未獲告知</option>
+    <option value='few'>約 1–2 個</option>
+    <option value='several'>約 3 個或以上</option>
     <option value='continuous'>持續有新個案優先處理</option>
-  </select></label>
+  </select><small class='field-help' id='queue-priority-help'>只按職員告知或確實知道的情況選擇。</small></label>
 </div>`);
 const hospitalField = document.querySelector('.hospital-field');
 const queueContext = document.querySelector('.queue-context');
@@ -49,6 +49,7 @@ function syncModeControls() {
   elapsedLabel.classList.toggle('hidden', !waiting);
   hospitalField.classList.toggle('hidden', !waiting);
   queueContext.classList.toggle('hidden', !waiting);
+  document.querySelector('.research-section')?.classList.toggle('hidden', !waiting);
   document.querySelector('.summary').classList.toggle('hidden', waiting);
   document.querySelector('.forecast-lock').innerHTML = waiting
     ? `<span>目前狀態</span><strong>院內</strong><small>只顯示所在醫院</small>`

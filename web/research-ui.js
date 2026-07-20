@@ -18,9 +18,9 @@ function datetimeLocal(date = new Date()) {
 }
 
 function sectionHtml() {
-  return `<section class="research-section" id="wait-study" aria-labelledby="study-title">
-    <div class="section-heading"><div><span class="section-no">LIVE</span><h2 id="study-title">記錄你的實際等候</h2></div>
-      <p>每次明確回報都能補足「何時真正第一次見醫生」的資料缺口</p></div>
+  return `<section class="research-section hidden" id="wait-study" aria-labelledby="study-title">
+    <div class="section-heading"><div><span class="section-no">研究</span><h2 id="study-title">自願記錄實際輪候</h2></div>
+      <p>只適用於正在急症室等候的人；開始後可每 15 分鐘更新，直至第一次見醫生或離開</p></div>
     <div class="study-shell">
       <div id="study-status" class="study-status" role="status"></div>
       <div id="study-content"></div>
@@ -31,16 +31,17 @@ function sectionHtml() {
 function setupHtml() {
   const disabled = researchConfigured() ? "" : `<p class="config-warning">研究收集尚未連接 Supabase；預測比較仍可使用。部署者需先設定公開 URL、publishable key 與 Turnstile。</p>`;
   return `${disabled}<form id="study-start">
+    <div class="study-intro"><strong>怎樣參與</strong><ol><li>填寫到院及分流資料</li><li>等候期間按「仍在等候」</li><li>第一次見醫生後回報實際時間</li></ol><p>不知道的資料可以留空或選「尚未知道」，請不要猜測。</p></div>
     <div class="privacy-summary"><strong>只收集最低限度資料</strong><p>醫院、到院及回報時間、分流級別、隊列情境。絕不填寫姓名、身份證、電話、症狀或診斷。資料存放於 Supabase 新加坡區域；平台日誌可能包含網絡中繼資料。原始事件保留 24 個月，其後只保留最少 20 宗一組的不可逆彙總。</p></div>
-    <label><span>到院時間</span><input name="arrival_at" type="datetime-local" required value="${datetimeLocal()}"></label>
-    <label><span>實際分流級別</span><select name="triage" required>
+    <label><span>你何時到達急症室？</span><input name="arrival_at" type="datetime-local" required value="${datetimeLocal()}" aria-describedby="arrival-help"><small class="field-help" id="arrival-help">填寫到達急症室登記處的時間，不是開始填表的時間。</small></label>
+    <label><span>醫院給你的分流級別</span><select name="triage" required aria-describedby="triage-help">
       <option value="unknown">尚未知道</option><option value="t3">III 緊急</option><option value="t4">IV 次緊急</option><option value="t5">V 非緊急</option>
-    </select></label>
-    <label><span>同級位置（如知道）</span><input name="same_triage_position" type="number" min="1" max="999"></label>
-    <label><span>較高優先病人</span><select name="priority_pressure"><option value="unknown">不知道</option><option value="few">少量</option><option value="several">幾個</option><option value="continuous">持續插隊</option></select></label>
+    </select><small class="field-help" id="triage-help">以分流紙、手帶或職員告知為準；未獲告知請選「尚未知道」。</small></label>
+    <label><span>你在同一分流級別中大約排第幾？（選填）</span><input name="same_triage_position" type="number" min="1" max="999" step="1" placeholder="例如 2" aria-describedby="position-help"><small class="field-help" id="position-help">例如職員告知你「Cat 4 排第 2」。這不是全急症室的總輪候次序；不知道請留空。</small></label>
+    <label><span>前方有多少較高優先度個案？（如知道）</span><select name="priority_pressure" aria-describedby="priority-help"><option value="unknown">不知道／未獲告知</option><option value="few">約 1–2 個</option><option value="several">約 3 個或以上</option><option value="continuous">持續有新個案獲優先處理</option></select><small class="field-help" id="priority-help">只按職員告知或你確實知道的情況選擇，請不要自行推測。</small></label>
     <label class="consent"><input name="consent" type="checkbox" required><span>我明白這是未校準研究情境、不是個人就診承諾；我同意按上述用途收集資料，並可隨時刪除本次原始記錄。</span></label>
     <div id="turnstile-box"></div>
-    <button class="primary-action" type="submit" ${researchConfigured() ? "" : "disabled"}>開始記錄</button>
+    <button class="primary-action" type="submit" ${researchConfigured() ? "" : "disabled"}>開始匿名輪候記錄</button>
     <button class="text-action" type="button" id="show-recover">已有恢復碼</button>
   </form>
   <form id="study-recover" class="hidden"><label><span>16 位恢復碼</span><input name="recovery_code" autocomplete="off" maxlength="24" required></label>
