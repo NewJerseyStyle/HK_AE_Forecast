@@ -132,28 +132,6 @@ const queueStateText = (hospital) => {
   return [waited, position, pressureLabels[state.priorityPressure], officialSignal].filter(Boolean).join(' · ');
 };
 
-const reliabilityInfo = (forecast) => {
-  if (state.mode === 'waiting') return { label: '條件輪候狀態 · 不作倒數', detail: '仍未見醫生是新的條件事件；官方資料沒有病人級完成事件，不能把已等時間直接扣除或校準個人 hazard' };
-  const validation = forecast.validation;
-  if (!validation || !['blocked_holdout', 'calibration_and_blocked_test'].includes(validation.status)) return { label: '驗證資料不足', detail: '只作探索性參考' };
-  if (['persistence_guardrail', 'persistence'].includes(forecast.method)) {
-    const label = forecast.method === 'persistence' ? '維持現況勝出' : '基準保護';
-    return { label, detail: `較複雜方法未證明更好；獨立測試 MAE ${validation.persistence_mae_minutes} 分` };
-  }
-  const improvement = validation.relative_improvement_pct;
-  const methodLabels = {
-    damped_trend: '趨勢外推勝出',
-    blend_25: '混合模型勝出',
-    blend_50: '混合模型勝出',
-    blend_75: '混合模型勝出',
-    historical_analogues: '歷史類比勝出'
-  };
-  return {
-    label: methodLabels[forecast.method] || (improvement >= 15 ? '回測增益較明顯' : '回測有增益'),
-    detail: `獨立測試較維持現況改善 ${Math.max(0, improvement).toFixed(1)}%；部署 MAE ${validation.deployed_mae_minutes ?? validation.mae_minutes} 分`
-  };
-};
-
 function renderResults() {
   const allHospitals = [...state.model.hospitals].sort((a, b) =>
     remaining(displayMetric(a).p50) - remaining(displayMetric(b).p50)
@@ -182,14 +160,12 @@ function renderResults() {
     const rank = state.mode === 'waiting' ? '你所在的醫院' : `#${String(index + 1).padStart(2, '0')}`;
     const waiting = state.mode === 'waiting';
     const waitLabel = waiting ? '個人剩餘時間' : '預計輪候';
-    const reliability = reliabilityInfo(forecast);
     return `<button class='hospital-card' data-id='${hospital.id}'>
       <div class='card-top'><span class='rank'>${rank}</span><span class='risk-pill ${riskClass(risk)}'>${risk}% · ${riskLabel(risk)}</span></div>
       <h3>${hospital.name_tc}</h3><div class='en-name'>${hospital.name_en}</div>
       <div class='wait-line'><strong>${waiting ? '未能可靠倒數' : fmtMinutes(remaining(forecast.p50)).replace(' 小時', 'h').replace(' 分', 'm')}</strong><span>${waitLabel}</span></div>
       <div class='range-track'><i style='width:${Math.min(100, forecast.p90 / maxWait * 100)}%'></i></div>
       <div class='card-meta'><span>${waiting ? `新到院者官方顯示 ${fmtMinutes(forecast.p50)}–${fmtMinutes(forecast.p90)}` : `常見範圍 ${fmtMinutes(forecast.p10)}–${fmtMinutes(forecast.p90)}`}</span><span class='signal'>${waiting ? queueStateText(hospital) : signal}</span></div>
-      <div class='model-note'><strong>${reliability.label}</strong><span>${reliability.detail}</span></div>
     </button>`;
   }).join('');
   document.querySelectorAll('.hospital-card').forEach(card => card.addEventListener('click', () => openScenarioDetail(card.dataset.id)));
@@ -238,7 +214,7 @@ function openDetail(id) {
     </div>
     <h3>隱含壓力 ${metric.pressure_score} / 100</h3>
     <div class="pressure-bar"><i style="width:${metric.pressure_score}%"></i></div>
-    <p>目前官方 p50 為 ${fmtMinutes(current.p50)}、p95 為 ${fmtMinutes(current.p95)}；過去一小時變化為 ${current.trend_60m >= 0 ? "+" : ""}${current.trend_60m} 分鐘。預測參考 ${forecast.analog_count} 個最相似歷史狀態。</p>
+    <p>目前官方 p50 為 ${fmtMinutes(current.p50)}、p95 為 ${fmtMinutes(current.p95)}；過去一小時變化為 ${current.trend_60m >= 0 ? "+" : ""}${current.trend_60m} 分鐘。估算會參考同院在相近時段與壓力下的歷史變化。</p>
     <p><strong>個人院內輪候：</strong>官方數字是到院時的院級分布，不會減去個人已等待時間。仍未見醫生是條件事件；沒有病人級完成資料時不作個人倒數。</p>
   </div>`;
   document.querySelector("#detail-dialog").showModal();
@@ -265,7 +241,6 @@ function openScenarioDetail(id) {
   }
   const hospital = state.model.hospitals.find(row => row.id === id);
   const forecast = displayMetric(hospital);
-  const reliability = reliabilityInfo(forecast);
   const activity = state.context?.operational_context?.annual_ae_attendance_by_hospital?.[hospital.name_en];
   const cycle = hospital.triage[state.triage].cycle_profile;
   const simulation = forecast.simulation;
@@ -273,7 +248,7 @@ function openScenarioDetail(id) {
     ? `在 ${simulation.sample_count} 個相似轉移中，輪候不超過兩小時的比例為 ${simulation.within_120_pct}%，超過四小時為 ${simulation.over_240_pct}%。`
     : '每次刷新會在「仍未見醫生」的條件下更新隊列狀態；沒有病人級首次見醫生事件，不能提供已校準的個人完成機率。';
   document.querySelector('.dialog-body').insertAdjacentHTML('beforeend', `<section class='evidence-note'>
-    <h3>${reliability.label}</h3><p>${reliability.detail}。${activity ? `該院年度急症求診約 ${Number(activity).toLocaleString('zh-HK')} 人次；此年度規模資料不代表當值夜班人手。` : ''}</p>
+    <h3>如何理解這個估算</h3>${activity ? `<p>該院年度急症求診約 ${Number(activity).toLocaleString('zh-HK')} 人次；此年度規模資料不代表當值夜班人手。</p>` : ''}
     <p>同院歷史高峰時段為 ${cycle.historical_peak}，較全日中位 ${cycle.peak_vs_overall_minutes >= 0 ? '+' : ''}${cycle.peak_vs_overall_minutes} 分鐘。${cycle.historical_lowest_hour ? `每小時低位常見於 ${cycle.historical_lowest_hour}；下降最快的起始時段為 ${cycle.fastest_clearing_hour}（下一小時中位變化 ${cycle.fastest_clearing_change_next_60m >= 0 ? '+' : ''}${cycle.fastest_clearing_change_next_60m} 分）。` : ''}這是觀察到的輪候週期和隊列變化，不等同員工效率。</p>
     <p>${simulationText}</p>
   </section>`);
