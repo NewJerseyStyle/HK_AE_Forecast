@@ -36,6 +36,10 @@ VITE_GA_MEASUREMENT_ID
 
 The Google tag is not loaded until the visitor explicitly opts in. Analytics records ordinary GA4 page usage only. Do not add hospital, triage, queue, arrival, waiting, recovery, or outcome fields to analytics events.
 
+The pre-arrival safety screen is deliberately ephemeral: its answer remains only in JavaScript memory and must not be sent to GA4, Supabase, local storage, logs, or model-training data. Sensitive navigation links such as 999, the A&E list, and primary-care options stop click propagation so ordinary outbound-click measurement does not infer the selected health path.
+
+The screen is a safety gate, not a triage instrument. Hospital Authority triage categories are assigned by experienced registered nursing staff. The red-flag examples are based on official Hospital Authority, Centre for Health Protection, and Fire Services Department safety information, are not exhaustive, and must never be used to rule out an emergency.
+
 ## Stage 2 model promotion
 
 The database now computes readiness without exporting raw participant records. `eligible_to_train` requires all of the following:

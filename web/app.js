@@ -1,4 +1,5 @@
 import "./research-ui.js";
+import { planningRecommendation } from "./journey-core.js";
 
 const state = { model: null, triage: "t45", elapsed: 0 };
 
@@ -8,13 +9,35 @@ state.horizon = 60;
 state.selectedHospital = null;
 state.queuePosition = null;
 state.priorityPressure = 'unknown';
+state.planningPath = null;
 
 const panel = document.querySelector('.control-panel');
 panel.insertAdjacentHTML('afterbegin', `<div class='mode-switch' role='group' aria-label='使用情境'>
   <button class='active' data-mode='planning'>尚未到院 · 找最快選擇</button>
   <button data-mode='waiting'>已在急症室輪候</button>
-</div>`);
+</div>
+<section class='planning-journey journey-panel' aria-labelledby='planning-title'>
+  <div class='journey-heading'><span>出發前 · 約 1 分鐘</span><h2 id='planning-title'>先確認現在需要多快求助</h2><p>這不是醫療分流或診斷，答案不會被儲存。正式分流由急症室護士決定。</p></div>
+  <div class='red-flag-box'>
+    <strong>如有任何一項，不要繼續比較輪候時間（例子並非完整清單）：</strong>
+    <ul><li>嚴重呼吸困難、不能正常說話或嘴唇發紫</li><li>失去知覺、反應異常、抽搐或突然昏厥</li><li>突然口齒不清、半邊臉或肢體無力</li><li>嚴重或持續胸痛、無法控制的出血或嚴重創傷</li><li>嚴重過敏反應，或情況正在快速惡化</li></ul>
+    <button type='button' data-planning-path='emergency'>有任何一項／無法安全自行求診</button>
+  </div>
+  <div class='planning-choice' role='group' aria-label='以上紅旗都沒有時選擇目前情況'>
+    <p>以上都沒有，選擇最接近目前的情況：</p>
+    <button type='button' data-planning-path='urgent'><strong>仍然很不舒服或不確定</strong><span>就近求醫，不按輪候時間繞遠路</span></button>
+    <button type='button' data-planning-path='stable_ae'><strong>情況穩定，仍打算去急症室</strong><span>查看 IV／V 類院級輪候參考</span></button>
+    <button type='button' data-planning-path='primary_care'><strong>症狀輕微而且穩定</strong><span>先看看基層醫療選擇</span></button>
+  </div>
+  <div id='planning-advice' class='planning-advice hidden' aria-live='polite'></div>
+</section>
+<aside class='waiting-journey journey-panel hidden' aria-labelledby='waiting-title'>
+  <div><span>已經完成登記／分流</span><h2 id='waiting-title'>等候期間，病情變化比倒數更重要</h2><p>如痛楚、呼吸、清醒程度或其他症狀轉差，立即告知分流護士，不要等待本頁刷新。</p></div>
+  <button type='button' id='waiting-worse'>我的情況變差了</button>
+  <div id='waiting-worse-advice' class='hidden' role='alert'><strong>現在通知急症室職員重新評估</strong><span>如無法接觸職員或情況危急，請身旁的人協助求助。此網頁不能替你重新分流。</span></div>
+</aside>`);
 const elapsedLabel = document.querySelector('#elapsed').closest('label');
+const triageLabel = document.querySelector('#triage').closest('label');
 elapsedLabel.classList.add('waiting-only', 'hidden');
 elapsedLabel.insertAdjacentHTML('beforebegin', `<label class='hospital-field waiting-only hidden'>
   <span>你所在的醫院</span>
@@ -46,11 +69,17 @@ function populateHospitalSelect() {
 
 function syncModeControls() {
   const waiting = state.mode === 'waiting';
+  const planningForecast = !waiting && planningRecommendation(state.planningPath)?.showForecast;
   elapsedLabel.classList.toggle('hidden', !waiting);
+  triageLabel.classList.toggle('hidden', !waiting);
   hospitalField.classList.toggle('hidden', !waiting);
-  queueContext.classList.toggle('hidden', !waiting);
+  queueContext.classList.add('hidden');
+  document.querySelector('.planning-journey').classList.toggle('hidden', waiting);
+  document.querySelector('.waiting-journey').classList.toggle('hidden', !waiting);
   document.querySelector('.research-section')?.classList.toggle('hidden', !waiting);
-  document.querySelector('.summary').classList.toggle('hidden', waiting);
+  document.querySelector('.summary').classList.toggle('hidden', waiting || !planningForecast);
+  document.querySelector('.results-section').classList.toggle('hidden', !waiting && !planningForecast);
+  document.querySelector('.forecast-lock').classList.toggle('hidden', !waiting && !planningForecast);
   document.querySelector('.forecast-lock').innerHTML = waiting
     ? `<span>目前狀態</span><strong>院內</strong><small>只顯示所在醫院</small>`
     : `<label><span>預計抵達</span><select id='arrival-minutes' aria-label='預計抵達時間'>
@@ -61,14 +90,63 @@ function syncModeControls() {
     render();
   });
 }
+
+function syncJourneyCopy() {
+  const waiting = state.mode === 'waiting';
+  document.querySelector('.hero h1').innerHTML = waiting
+    ? '已經在急症室，<br><em>還要怎樣等下去？</em>'
+    : '先判斷要多快求醫，<br><em>再比較等候時間。</em>';
+  document.querySelector('.hero-copy').textContent = waiting
+    ? '只顯示你所在醫院的院級資料，並協助記錄仍在等候、隊列事件和第一次見醫生時間。'
+    : '安全檢查不會儲存答案；只有情況穩定時，才用醫管局資料比較到院後的輪候情境。';
+}
+
+function choosePlanningPath(path) {
+  const recommendation = planningRecommendation(path);
+  if (!recommendation) return;
+  state.planningPath = path;
+  state.triage = 't45';
+  document.querySelector('#triage').value = 't45';
+  const advice = document.querySelector('#planning-advice');
+  const actions = path === 'emergency'
+    ? `<a class='journey-primary' data-sensitive-navigation href='tel:999'>致電 999</a>`
+    : path === 'urgent'
+      ? `<a class='journey-primary' data-sensitive-navigation href='https://www3.ha.org.hk/aedwt/index2.html?lang=tc' target='_blank' rel='noreferrer'>查看醫管局急症室名單</a>`
+      : path === 'primary_care'
+        ? `<a class='journey-primary' data-sensitive-navigation href='https://www.pcdirectory.gov.hk/' target='_blank' rel='noreferrer'>搜尋基層醫療服務</a><a data-sensitive-navigation href='https://www.ha.org.hk/fmc' target='_blank' rel='noreferrer'>普通科門診資料</a>`
+        : `<button type='button' class='journey-primary' data-scroll-results>查看醫院輪候比較</button>`;
+  advice.className = `planning-advice ${recommendation.tone}`;
+  advice.innerHTML = `<small>行動建議</small><h3>${recommendation.title}</h3><p>${recommendation.body}</p><div>${actions}<button type='button' data-reset-planning>重新選擇</button></div>`;
+  document.querySelector('.red-flag-box').classList.add('hidden');
+  document.querySelector('.planning-choice').classList.add('hidden');
+  syncModeControls();
+  if (state.model) render();
+  advice.querySelector('[data-scroll-results]')?.addEventListener('click', () =>
+    document.querySelector('.results-section').scrollIntoView({ behavior: 'smooth' })
+  );
+  advice.querySelector('[data-reset-planning]')?.addEventListener('click', () => {
+    state.planningPath = null;
+    advice.className = 'planning-advice hidden';
+    advice.innerHTML = '';
+    document.querySelector('.red-flag-box').classList.remove('hidden');
+    document.querySelector('.planning-choice').classList.remove('hidden');
+    syncModeControls();
+  });
+}
+
+document.querySelectorAll('[data-planning-path]').forEach(button =>
+  button.addEventListener('click', () => choosePlanningPath(button.dataset.planningPath))
+);
+document.querySelector('#waiting-worse')?.addEventListener('click', () => {
+  document.querySelector('#waiting-worse-advice').classList.remove('hidden');
+});
+document.addEventListener('click', event => {
+  if (event.target.closest('[data-sensitive-navigation]')) event.stopImmediatePropagation();
+}, true);
+
 document.querySelectorAll('.mode-switch button').forEach(button => button.addEventListener('click', () => {
   state.mode = button.dataset.mode;
   document.querySelectorAll('.mode-switch button').forEach(item => item.classList.toggle('active', item === button));
-  elapsedLabel.classList.toggle('hidden', state.mode !== 'waiting');
-  const lock = document.querySelector('.forecast-lock');
-  lock.innerHTML = state.mode === 'planning'
-    ? '<span>預計抵達</span><strong>60</strong><small>分鐘後</small>'
-    : '<span>情境</span><strong>院內</strong><small>剩餘輪候估算</small>';
   if (state.mode === 'waiting' && state.elapsed === 0) {
     state.elapsed = 60;
     document.querySelector('#elapsed').value = 60;
@@ -77,6 +155,7 @@ document.querySelectorAll('.mode-switch button').forEach(button => button.addEve
     state.elapsed = 0;
     document.querySelector('#elapsed').value = 0;
   }
+  syncJourneyCopy();
   syncModeControls();
   if (state.model) render();
 }));
@@ -441,5 +520,6 @@ document.querySelector('#priority-pressure').addEventListener('change', event =>
   state.priorityPressure = event.target.value;
   render();
 });
+syncJourneyCopy();
 init();
 setInterval(refreshLiveAndRender, LIVE_REFRESH_MS);
